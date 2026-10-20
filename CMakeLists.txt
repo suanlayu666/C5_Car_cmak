@@ -17,10 +17,14 @@ include(cmake/components.cmake)
 # Stubs to be able to add compiler flag overrides, e.g. -Os
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
   # Add additional source files here
+  # 将串口模块的实现文件加入编译和链接；仅创建 .c 文件不会自动参与构建。
+  app/debug_uart.c
 )
 
 target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC
   # Add additional include directories here
+  # 让 main.c 可以使用 #include "debug_uart.h" 找到 app/ 下的头文件。
+  app
 )
 
 target_compile_definitions(${CMAKE_PROJECT_NAME} PUBLIC
