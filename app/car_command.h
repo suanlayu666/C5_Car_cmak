@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 /* 单位都是“计数/10 ms”，不是 PWM 百分比。 */
-#define CAR_SPEED_INITIAL  15
+#define CAR_SPEED_INITIAL  0
 #define CAR_SPEED_MAX      20
 
 typedef struct
@@ -13,7 +13,7 @@ typedef struct
     int16_t right;
 } car_target_t;
 
-/* 基础速度恢复为 15，方向恢复为前进直行。仅由主循环使用。 */
+/* 上电停车，方向为前进直行；用 + 增加速度。仅由主循环使用。 */
 void car_command_init(void);
 
 /* + 加速，- 减速，l 左转，r 右转，f 前进直行，b 后退直行，s 停止。

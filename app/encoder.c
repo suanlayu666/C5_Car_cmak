@@ -3,9 +3,6 @@
 #include "mx_tim2.h"
 #include "mx_tim6.h"
 
-/* 中断更新、主循环读取；volatile 保证每次访问实际内存。 */
-static volatile encoder_sample_t latest_sample;
-
 /* 保存上次计数，定时器连续运行；本次减上次就是这 10 ms 的净计数。 */
 static uint32_t left_previous;
 static uint16_t right_previous;
@@ -78,23 +75,11 @@ static int32_t encoder_read_right(void)
     return -count;
 }
 
-/* 编码器模块只负责采样。由 main.c 的 TIM6 回调按固定周期调用。 */
-void encoder_update(void)
+/* 只在 TIM6 中断中调用，每 10 ms 读取一次；不再维护额外的全局快照。 */
+encoder_sample_t encoder_read(void)
 {
-    latest_sample.left = encoder_read_left();
-    latest_sample.right = encoder_read_right();
-}
-
-encoder_sample_t encoder_get_sample(void)
-{
-    /* volatile 不能保证一整组字段在同一时刻读取完成。
-     * 复制这几个字段时短暂屏蔽中断，防止左轮是旧数据、右轮却是新数据。
-     * 保存并恢复原来的屏蔽状态，避免意外打开调用者已经关闭的中断。
-     */
-    uint32_t interrupt_state = __get_PRIMASK();
-    __disable_irq();
-    encoder_sample_t sample = latest_sample;
-    __set_PRIMASK(interrupt_state);
-
+    encoder_sample_t sample;
+    sample.left = encoder_read_left();
+    sample.right = encoder_read_right();
     return sample;
 }
