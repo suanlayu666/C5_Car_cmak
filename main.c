@@ -14,75 +14,103 @@
   *
   ******************************************************************************
   */
-/* Includes ------------------------------------------------------------------*/
 #include "main.h"
-/* 生成的 PE2 引脚别名，避免在应用里重复硬编码端口和引脚号。 */
-#include "mx_gpio_default.h"
-/* 自己编写的串口模块，主循环只调用接口，不直接处理 USART2 配置。 */
 #include "debug_uart.h"
+#include "encoder.h"
+#include "motor_driver.h"
+#include "speed_pid.h"
+#include "mx_tim6.h"
+#include <stdio.h>
 
-/* Private typedef -----------------------------------------------------------*/
-/* Private define ------------------------------------------------------------*/
-/* Private macro -------------------------------------------------------------*/
-/* Private variables ---------------------------------------------------------*/
-/* Private functions prototype -----------------------------------------------*/
+/* 目标单位：计数/10 ms；两轮分别保存 PI 状态。 */
+#define LEFT_TARGET_COUNT  15
+#define LEFT_PI_KP         1.0f
+#define LEFT_PI_KI         5.0f
+#define RIGHT_TARGET_COUNT 15
+#define RIGHT_PI_KP        1.0f
+#define RIGHT_PI_KI        5.0f
+static speed_pid_t left_pid;
+static speed_pid_t right_pid;
+/* 主循环与中断共享的运行标志和 PWM 输出。 */
+static volatile uint8_t pi_enabled = 0U;
+static volatile int16_t left_pwm = 0;
+static volatile int16_t right_pwm = 0;
 
-/**
-  * brief:  The application entry point.
-  * retval: none but we specify int to comply with C99 standard
-  */
 int main(void)
 {
-  /** System Init: this code placed in targets folder initializes your system.
-    * It calls the initialization (and sets the initial configuration) of the peripherals.
-    * You can use STM32CubeMX to generate and call this code or not in this project.
-    * It also contains the HAL initialization and the initial clock configuration.
-    */
-  /* 时钟、GPIO、USART2 等由生成代码统一初始化；失败时不进入应用循环。
-   * PB7/STBY 在 GPIO 初始化时设为 Low，本测试不会使能电机驱动。
-   */
+  /* 时钟、GPIO、定时器和串口由 CubeMX2 生成的代码初始化。 */
   if (mx_system_init() != SYSTEM_OK)
   {
     return (-1);
   }
-  else
+
+  motor_init(); /* 启动 PWM，保持 STBY=Low。 */
+  speed_pid_init(&left_pid, LEFT_PI_KP, LEFT_PI_KI);
+  speed_pid_init(&right_pid, RIGHT_PI_KP, RIGHT_PI_KI);
+  encoder_init(); /* 启动编码器和 TIM6 的 10 ms 中断。 */
+
+  /* 上电等待两秒再持续运行，PWM 由中断统一更新。 */
+  HAL_Delay(2000);
+  pi_enabled = 1U;
+  uint32_t uart_tick = HAL_GetTick();
+
+  while (1)
   {
-    /* HAL_GetTick() 返回毫秒计数。两个变量分别记录各任务上次执行的时刻。
-     * 它们在 while 外定义，才能在每轮循环之间保留记录。
-     */
-    uint32_t led_tick = HAL_GetTick();
-    uint32_t uart_tick = led_tick;
-
-    while (1)
+    const uint32_t now = HAL_GetTick();
+    if ((uint32_t)(now - uart_tick) >= 1000U)
     {
-      /* 每轮读取当前时间，让两个任务根据各自的时间间隔决定是否执行。
-       * 不用 HAL_Delay(500)，主循环可以继续轮询其他任务。
-       * 但 debug_uart_write() 自身仍是短暂阻塞发送，并非异步接口。
-       */
-      const uint32_t now = HAL_GetTick();
+      uart_tick = now;
 
-      /* 无符号时间差表示经过的毫秒数；持续轮询时也能跨越 tick 计数回绕。
-       * 每 500 ms 翻转一次，因此完整的亮灭周期约为 1 s。
-       */
-      if ((uint32_t)(now - led_tick) >= 500U)
-      {
-        /* 记录实际执行时刻；这是主循环调度，不是硬件精确定时。 */
-        led_tick = now;
-        HAL_GPIO_TogglePin(STATUS_LED_PORT, STATUS_LED_PIN);
-      }
+      /* 一次复制同一轮控制的计数和 PWM；串口发送放在保护区外。 */
+      uint32_t interrupt_state = __get_PRIMASK();
+      __disable_irq();
+      const encoder_sample_t sample = encoder_get_sample();
+      const int16_t left_output = left_pwm;
+      const int16_t right_output = right_pwm;
+      __set_PRIMASK(interrupt_state);
 
-      /* 串口任务每 1000 ms 执行一次，与 LED 任务分别计时。 */
-      if ((uint32_t)(now - uart_tick) >= 1000U)
+      /* 每秒显示最新的 10 ms 反馈，不累计这一秒的计数。 */
+      char text[96];
+      snprintf(text, sizeof(text),
+               "PI10ms TL=%ld L=%ld LP=%ld%% TR=%ld R=%ld RP=%ld%%\r\n",
+               (long)LEFT_TARGET_COUNT, (long)sample.left, (long)left_output,
+               (long)RIGHT_TARGET_COUNT, (long)sample.right, (long)right_output);
+      if (debug_uart_write(text) != HAL_OK)
       {
-        uart_tick = now;
-        /* \r\n 是回车和换行，方便电脑串口工具将每次输出显示为新的一行。 */
-        if (debug_uart_write("C5_Car USART2 OK\r\n") != HAL_OK)
-        {
-          /* 当前验证程序遇到发送错误就结束 main，不继续重复发送。 */
-          return (-1);
-        }
+        /* 先禁止 PI，再停止电机，防止下个中断重新启动驱动。 */
+        interrupt_state = __get_PRIMASK();
+        __disable_irq();
+        pi_enabled = 0U;
+        left_pwm = 0;
+        right_pwm = 0;
+        motor_stop();
+        __set_PRIMASK(interrupt_state);
+        return (-1);
       }
     }
   }
-} /* end main */
+}
+
+/* 每 10 ms 按“采样 -> PI -> PWM”的顺序执行，禁止在中断中发送串口或延时。 */
+void HAL_TIM_UpdateCallback(hal_tim_handle_t *htim)
+{
+  if (htim == mx_tim6_gethandle())
+  {
+    encoder_update();
+
+    if (pi_enabled != 0U)
+    {
+      const encoder_sample_t sample = encoder_get_sample();
+      /* 两轮共用算法，分别使用自己的目标、反馈和积分状态。 */
+      float left_output = speed_pid_update(&left_pid, (float)LEFT_TARGET_COUNT,
+                                           (float)sample.left);
+      float right_output = speed_pid_update(&right_pid, (float)RIGHT_TARGET_COUNT,
+                                            (float)sample.right);
+      left_pwm = (int16_t)left_output; /* 输出已限幅到 0~30，转成整数百分点。 */
+      right_pwm = (int16_t)right_output;
+      motor_set_left(left_pwm);
+      motor_set_right(right_pwm);
+    }
+  }
+}
 

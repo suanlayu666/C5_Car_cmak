@@ -5,11 +5,6 @@
 /* 提供 hal_status_t、HAL_OK、HAL_ERROR 等 HAL2 类型和状态码。 */
 #include "stm32c5xx_hal_def.h"
 
-/* 兼容将来由 C++ 文件调用本模块；当前纯 C 工程也可以保留。 */
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /**
  * @brief  通过 USART2 发送一段文本，不自动添加换行。
  * @param  text  以 '\0' 结尾的有效 C 字符串；const 表示函数不修改文本。
@@ -20,9 +15,5 @@ extern "C" {
  *         文本遇到第一个 '\0' 就结束，不适合发送包含零字节的二进制数据。
  */
 hal_status_t debug_uart_write(const char *text);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* DEBUG_UART_H */
