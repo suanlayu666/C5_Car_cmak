@@ -20,6 +20,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
   app/encoder.c
   app/motor_driver.c
   app/speed_pid.c
+  app/car_command.c
 )
 
 target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC

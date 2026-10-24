@@ -5,6 +5,15 @@
 /* 提供 hal_status_t、HAL_OK、HAL_ERROR 等 HAL2 类型和状态码。 */
 #include "stm32c5xx_hal_def.h"
 
+/* 系统初始化成功后调用一次，开启 USART2 单字节接收中断和接收缓冲。 */
+hal_status_t debug_uart_init(void);
+
+/* 主循环取出一个字符，不等待数据。
+ * HAL_OK：收到字符；HAL_BUSY：缓冲为空；HAL_ERROR：接收错误或缓冲溢出。
+ * character 必须是有效地址。中断只收字节，命令解析放在主循环。
+ */
+hal_status_t debug_uart_read_char(char *character);
+
 /**
  * @brief  通过 USART2 发送一段文本，不自动添加换行。
  * @param  text  以 '\0' 结尾的有效 C 字符串；const 表示函数不修改文本。

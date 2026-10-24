@@ -10,7 +10,7 @@ void speed_pid_init(speed_pid_t *pid, float kp, float ki)
 float speed_pid_update(speed_pid_t *pid, float target, float feedback)
 {
     /* 零目标直接停止并清除历史积分，防止旧积分继续要求电机运行。 */
-    if (target <= 0.0f)
+    if (target == 0.0f)
     {
         pid->integral = 0.0f;
         return 0.0f;
@@ -27,14 +27,14 @@ float speed_pid_update(speed_pid_t *pid, float target, float feedback)
 
     /* 积分自身也限幅，防止误差长时间存在时无限累计。 */
     if (next_integral > SPEED_PID_OUTPUT_MAX) next_integral = SPEED_PID_OUTPUT_MAX;
-    if (next_integral < 0.0f) next_integral = 0.0f;
+    if (next_integral < SPEED_PID_OUTPUT_MIN) next_integral = SPEED_PID_OUTPUT_MIN;
 
     /* 3. 如果输出已越界，而且误差还推动它继续越界，本次不累加积分。
      * 例如已经超过 30%，还要求加速时冻结积分，避免解除限制后难以恢复。
      */
     float output = proportional + next_integral;
     if ((output > SPEED_PID_OUTPUT_MAX && error > 0.0f)
-        || (output < 0.0f && error < 0.0f))
+        || (output < SPEED_PID_OUTPUT_MIN && error < 0.0f))
     {
         output = proportional + pid->integral;
     }
@@ -43,8 +43,8 @@ float speed_pid_update(speed_pid_t *pid, float target, float feedback)
         pid->integral = next_integral;
     }
 
-    /* 4. 最终输出始终限制在 0~30%，当前不会给负占空比反转指令。 */
+    /* 4. 正输出驱动前进，负输出驱动后退，两侧限幅均为 30%。 */
     if (output > SPEED_PID_OUTPUT_MAX) output = SPEED_PID_OUTPUT_MAX;
-    if (output < 0.0f) output = 0.0f;
+    if (output < SPEED_PID_OUTPUT_MIN) output = SPEED_PID_OUTPUT_MIN;
     return output;
 }
