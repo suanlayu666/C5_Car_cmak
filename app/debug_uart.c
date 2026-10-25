@@ -49,11 +49,9 @@ void USART2_IRQHandler(void)
   HAL_UART_IRQHandler(mx_usart2_uart_gethandle());
 }
 
-/* HAL2 回调多了接收字节数和事件参数；每收到一个字节便重新开启接收。 */
-void HAL_UART_RxCpltCallback(hal_uart_handle_t *huart, uint32_t size_byte,
-                            hal_uart_rx_event_types_t rx_event)
+/* 每收到一个字节便重新开启接收；HAL 回调统一放在 main.c。 */
+void debug_uart_rx_complete(hal_uart_handle_t *huart, uint32_t size_byte)
 {
-  (void)rx_event;
   if (huart != mx_usart2_uart_gethandle() || rx_fault != 0U) return;
 
   if (size_byte == 1U && rx_byte != '\r' && rx_byte != '\n')
@@ -74,7 +72,7 @@ void HAL_UART_RxCpltCallback(hal_uart_handle_t *huart, uint32_t size_byte,
     rx_fault = 1U;
 }
 
-void HAL_UART_ErrorCallback(hal_uart_handle_t *huart)
+void debug_uart_rx_error(hal_uart_handle_t *huart)
 {
   if (huart == mx_usart2_uart_gethandle()) rx_fault = 1U;
 }

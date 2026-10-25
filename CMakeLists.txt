@@ -17,6 +17,7 @@ include(cmake/components.cmake)
 # 应用模块
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
   app/debug_uart.c
+  app/bluetooth.c
   app/encoder.c
   app/motor_driver.c
   app/speed_pid.c

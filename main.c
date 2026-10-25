@@ -16,6 +16,7 @@
   */
 #include "main.h"
 #include "debug_uart.h"
+#include "bluetooth.h"
 #include "car_command.h"
 #include "encoder.h"
 #include "motor_driver.h"
@@ -46,12 +47,34 @@ int main(void)
   speed_pid_init(&right_pid, SPEED_KP, SPEED_KI);
   car_command_init(); /* 上电速度为 0，用 + 起步。 */
   encoder_init();
-  hal_status_t uart_status = debug_uart_init();
+  /* 初始化失败会被各自的 read_char 报告，由下面的流程重新接收。 */
+  (void)debug_uart_init();
+  (void)bluetooth_init();
   uint32_t print_tick = HAL_GetTick();
 
   while (1)
   {
-    if (uart_status != HAL_OK && uart_status != HAL_BUSY)
+    uint8_t receive_error = 0U;
+    /* 两路各取一个字符，都交给同一个命令处理函数。 */
+    for (uint32_t source = 0U; source < 2U; source++)
+    {
+      char command;
+      hal_status_t status = source == 0U ? debug_uart_read_char(&command)
+                                         : bluetooth_read_char(&command);
+      if (status == HAL_BUSY) continue;
+      if (status != HAL_OK) { receive_error = 1U; break; }
+      car_target_t target;
+      if (car_command_handle(command, &target))
+      {
+        uint32_t interrupt_state = __get_PRIMASK();
+        __disable_irq();
+        left_target = target.left;
+        right_target = target.right;
+        __set_PRIMASK(interrupt_state);
+      }
+    }
+
+    if (receive_error)
     {
       /* 接收错误：停车、清掉目标和积分，重新等待新命令，不退出主循环。 */
       car_target_t stopped;
@@ -67,27 +90,10 @@ int main(void)
       motor_stop();
       __set_PRIMASK(interrupt_state);
       HAL_Delay(10U); /* 只在接收故障时等待；10 ms 控制中断照常运行。 */
-      uart_status = debug_uart_init();
+      (void)debug_uart_init();
+      (void)bluetooth_init();
       continue;
     }
-
-    char command;
-    uart_status = debug_uart_read_char(&command);
-    if (uart_status == HAL_OK)
-    {
-      car_target_t target;
-      if (car_command_handle(command, &target))
-      {
-        /* 一起更新，避免控制中断读到一新一旧的左右目标。 */
-        uint32_t interrupt_state = __get_PRIMASK();
-        __disable_irq();
-        left_target = target.left;
-        right_target = target.right;
-        __set_PRIMASK(interrupt_state);
-      }
-    }
-
-    if (uart_status != HAL_OK && uart_status != HAL_BUSY) continue;
     const uint32_t now = HAL_GetTick();
     if ((uint32_t)(now - print_tick) >= 1000U)
     {
@@ -109,6 +115,21 @@ int main(void)
       (void)debug_uart_write(text);
     }
   }
+}
+
+/* HAL 回调只能定义一份；各模块先判断句柄，只处理自己的串口。 */
+void HAL_UART_RxCpltCallback(hal_uart_handle_t *uart, uint32_t size,
+                            hal_uart_rx_event_types_t event)
+{
+  (void)event;
+  debug_uart_rx_complete(uart, size);
+  bluetooth_rx_complete(uart, size);
+}
+
+void HAL_UART_ErrorCallback(hal_uart_handle_t *uart)
+{
+  debug_uart_rx_error(uart);
+  bluetooth_rx_error(uart);
 }
 
 void HAL_TIM_UpdateCallback(hal_tim_handle_t *htim)

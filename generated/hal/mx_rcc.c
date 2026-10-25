@@ -105,6 +105,7 @@ system_status_t mx_rcc_peripherals_clock_config(void)
 {
   /* Peripherals using PCLK1 (144 MHz):
     USART2
+    UART4
   */
 
   return SYSTEM_OK;

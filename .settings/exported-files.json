@@ -1,7 +1,7 @@
 {
   "disclaimer": "Do not modify this file as it is used by STM32CubeMX2 to determine what and how to update your project with new configuration",
   "version": "1.0.0",
-  "timestamp": "2026-10-20T10:59:45.692Z",
+  "timestamp": "2026-10-24T07:31:37.726Z",
   "files": [
     {
       "fileGroup": "project_file",
@@ -191,7 +191,7 @@
       "fileGroup": "generated",
       "checksum": {
         "algo": "sha256",
-        "digest": "6b3e8a86ee35819e9265c3917f7532dc222bc25e42048a0f7b03103cf6f6c74f"
+        "digest": "7befc8e7ab99bcd9e05e7f5efd5ce772f41fa16fcdf20981fd63aeed1c2dbeb8"
       },
       "file": "generated/hal/STM32_HAL_Driver_codegen.cmake"
     },
@@ -199,7 +199,7 @@
       "fileGroup": "generated",
       "checksum": {
         "algo": "sha256",
-        "digest": "b2e9301335e9ed9ec66cfc85dbb862b9c9d65de84e5c27561e27c867fab1d6b0"
+        "digest": "eaedeec5d9cf1116ecb5356004650a1392ec969e09f27cfe3c6c835bb73fa9e6"
       },
       "file": "generated/hal/STM32_HAL_Driver_codegen.gpdsc"
     },
@@ -279,7 +279,7 @@
       "fileGroup": "generated",
       "checksum": {
         "algo": "sha256",
-        "digest": "e5ca2c679b3190cb4028e3092821d5e013d56be03f6eedaa7ab2cd4728e0f529"
+        "digest": "4c80901b31f62d9c83bf6cb8739b78f37a9fde20fa30d1b1bd84da772c07172d"
       },
       "file": "generated/hal/mx_hal_def.h"
     },
@@ -303,7 +303,7 @@
       "fileGroup": "generated",
       "checksum": {
         "algo": "sha256",
-        "digest": "3007e838fbc0b7af719fa7bd15895d0bcb14105df10a48758dbbff6e91eef9fe"
+        "digest": "42ea250083066d63d5ab29f7cd55150d396defb728da30894ce590cc2d076d3f"
       },
       "file": "generated/hal/mx_rcc.c"
     },
@@ -327,7 +327,7 @@
       "fileGroup": "generated",
       "checksum": {
         "algo": "sha256",
-        "digest": "6098803517fc49dde745ec5d55b6a4ffc7665573f0171d9af1239215ba7b228f"
+        "digest": "96b5753177d58d31be79aa658eea41ae7bdc14749a282e2b1466a0e944b1490c"
       },
       "file": "generated/hal/mx_system.c"
     },
@@ -402,6 +402,22 @@
         "digest": "69266bd6c888ef6da2497457eeeb4457bee6c2b65eb73fcca2941c438c8329c8"
       },
       "file": "generated/hal/mx_tim6.h"
+    },
+    {
+      "fileGroup": "generated",
+      "checksum": {
+        "algo": "sha256",
+        "digest": "7c505ce0a6a551771cf82ee026227c69cea8b9cf1df32286a944bcbb90280fe6"
+      },
+      "file": "generated/hal/mx_uart4.c"
+    },
+    {
+      "fileGroup": "generated",
+      "checksum": {
+        "algo": "sha256",
+        "digest": "8be74981ac1a4dbf5a13e5f292116e01430590174d4710fc473585a0e7a0bb53"
+      },
+      "file": "generated/hal/mx_uart4.h"
     },
     {
       "fileGroup": "generated",
