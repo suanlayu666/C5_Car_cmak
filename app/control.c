@@ -20,7 +20,7 @@ void Control_Command(uint8_t command)
     static char turn = 'f';     /* f 直行、l 左转、r 右转。 */
     switch (command)
     {
-        case '+': if (speed < 20) speed++; break;
+        case '+': if (speed < 50) speed++; break;
         case '-': if (speed > 0) speed--; break;
         case 'f': case 'F': travel = 1; turn = 'f'; break;
         case 'b': case 'B': travel = -1; turn = 'f'; break;

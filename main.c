@@ -20,6 +20,7 @@
 #include "encoder.h"
 #include "motor.h"
 #include "mx_tim6.h"
+#include "mx_uart4.h"
 #include "mx_usart2.h"
 #include <stdio.h>
 #include <string.h>
@@ -53,6 +54,8 @@ int main(void)
                      (long)tl, (long)left, (long)lp, (long)tr, (long)right, (long)rp);
             /* USART2 → ST-LINK → 电脑，115200。这里只显示，不接收遥控。 */
             HAL_UART_Transmit(mx_usart2_uart_gethandle(), text, (uint32_t)strlen(text), 20U);
+            /* 同一条数据通过 UART4 → JDY-31 回传，网页每秒显示左右占空比。 */
+            HAL_UART_Transmit(mx_uart4_uart_gethandle(), text, (uint32_t)strlen(text), 100U);
         }
     }
 }
