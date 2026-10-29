@@ -33,6 +33,20 @@ extern "C" {
 /* Exported defines for gpio_default in HAL layer                             */
 /******************************************************************************/
 
+/* Primary aliases for GPIO PA5 pin */
+#define CCD_CLK_PORT                                    HAL_GPIOA
+#define CCD_CLK_PIN                                     HAL_GPIO_PIN_5
+#define CCD_CLK_INIT_STATE                              HAL_GPIO_PIN_RESET
+#define CCD_CLK_ACTIVE_STATE                            HAL_GPIO_PIN_SET
+#define CCD_CLK_INACTIVE_STATE                          HAL_GPIO_PIN_RESET
+
+/* Primary aliases for GPIO PA6 pin */
+#define CCD_SI_PORT                                     HAL_GPIOA
+#define CCD_SI_PIN                                      HAL_GPIO_PIN_6
+#define CCD_SI_INIT_STATE                               HAL_GPIO_PIN_RESET
+#define CCD_SI_ACTIVE_STATE                             HAL_GPIO_PIN_SET
+#define CCD_SI_INACTIVE_STATE                           HAL_GPIO_PIN_RESET
+
 /* Primary aliases for GPIO PB0 pin */
 #define MOTOR_L_IN1_PORT                                HAL_GPIOB
 #define MOTOR_L_IN1_PIN                                 HAL_GPIO_PIN_0

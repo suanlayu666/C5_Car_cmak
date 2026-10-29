@@ -21,6 +21,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
   app/motor.c
   app/pid.c
   app/control.c
+  app/ccd.c
 )
 
 target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC

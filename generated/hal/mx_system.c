@@ -146,6 +146,18 @@ system_status_t mx_system_init(void)
     return SYSTEM_PERIPHERAL_ERROR;
   }
 
+  /** ADC1 */
+  if (mx_adc1_init() == NULL)
+  {
+    return SYSTEM_PERIPHERAL_ERROR;
+  }
+
+  /** TIM7 */
+  if (mx_tim7_init() == NULL)
+  {
+    return SYSTEM_PERIPHERAL_ERROR;
+  }
+
   if (post_system_init_hook() != SYSTEM_OK)
   {
     return SYSTEM_POSTSYSTEM_ERROR;

@@ -5,6 +5,7 @@
 #include "mx_tim1.h"
 #include "mx_tim2.h"
 #include "mx_tim6.h"
+#include "ccd.h"
 
 volatile int16_t Target_Left, Target_Right;
 volatile int32_t Encoder_Left, Encoder_Right;
@@ -72,5 +73,19 @@ void Control(void)
 
 void HAL_TIM_UpdateCallback(hal_tim_handle_t *timer)
 {
-    if (timer == mx_tim6_gethandle()) Control();
+static uint8_t count = 0;
+
+    if (timer == mx_tim6_gethandle()) 
+    {
+        /*小车速度控制，10ms一次*/
+        Control();
+
+        /*CCD采集，20ms一次*/
+        count++;
+        if (count >= 2)
+        {
+            count = 0;
+            Get_CCD_Value();
+        }
+    }
 }

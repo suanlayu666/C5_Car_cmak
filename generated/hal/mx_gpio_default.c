@@ -31,9 +31,27 @@ system_status_t mx_gpio_default_init(void)
 {
   hal_gpio_config_t  gpio_config;
 
+  HAL_RCC_GPIOA_EnableClock();
+
   HAL_RCC_GPIOB_EnableClock();
 
   HAL_RCC_GPIOE_EnableClock();
+
+  /*
+    GPIO pin labels :
+    PA5   ---------> CCD_CLK
+    PA6   ---------> CCD_SI
+    */
+  /* Configure PA5, PA6 GPIO pins in output mode */
+  gpio_config.mode            = HAL_GPIO_MODE_OUTPUT;
+  gpio_config.speed           = HAL_GPIO_SPEED_FREQ_MEDIUM;
+  gpio_config.pull            = HAL_GPIO_PULL_NO;
+  gpio_config.output_type     = HAL_GPIO_OUTPUT_PUSHPULL;
+  gpio_config.init_state      = HAL_GPIO_PIN_RESET;
+  if (HAL_GPIO_Init(HAL_GPIOA, CCD_CLK_PIN | CCD_SI_PIN, &gpio_config) != HAL_OK)
+  {
+    return SYSTEM_PERIPHERAL_ERROR;
+  }
 
   /*
     GPIO pin labels :
@@ -74,6 +92,9 @@ system_status_t mx_gpio_default_init(void)
 
 system_status_t mx_gpio_default_deinit(void)
 {
+  /* De-initialize pins of GPIOA port */
+  HAL_GPIO_DeInit(HAL_GPIOA, CCD_CLK_PIN | CCD_SI_PIN);
+
   /* De-initialize pins of GPIOB port */
   HAL_GPIO_DeInit(HAL_GPIOB, MOTOR_L_IN1_PIN | MOTOR_L_IN2_PIN | MOTOR_R_IN1_PIN | MOTOR_R_IN2_PIN | MOTOR_STBY_PIN);
 

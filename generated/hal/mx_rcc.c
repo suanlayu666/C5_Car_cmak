@@ -108,5 +108,18 @@ system_status_t mx_rcc_peripherals_clock_config(void)
     UART4
   */
 
+  /* Peripherals using PSIS (144 MHz):
+    ADC1
+  */
+  /* PSIS already enabled inside mx_rcc_init() */
+
+  /* Peripherals using ADC_DAC_DIV (36 MHz):
+    ADC1
+  */
+  if (HAL_RCC_ADCDAC_SetKernelClkPrescaler(HAL_RCC_ADCDAC_PRESCALER4) != HAL_OK)
+  {
+    return SYSTEM_CLOCK_ERROR;
+  }
+
   return SYSTEM_OK;
 }

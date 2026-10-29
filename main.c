@@ -24,6 +24,7 @@
 #include "mx_usart2.h"
 #include <stdio.h>
 #include <string.h>
+#include "ccd.h"
 
 int main(void)
 {
@@ -31,12 +32,16 @@ int main(void)
     Motor_Init();
     Encoder_Init();
     Bluetooth_Init();
+    CCD_Init();
+
     LL_TIM_ClearFlag_UPDATE(TIM6);
     HAL_TIM_Start_IT(mx_tim6_gethandle()); /* 10 ms 速度闭环。 */
 
     uint32_t last_print = HAL_GetTick();
+
     while (1)
     {
+        CCD_Task();
         if ((uint32_t)(HAL_GetTick() - last_print) >= 1000U)
         {
             last_print = HAL_GetTick();
@@ -53,7 +58,7 @@ int main(void)
                      "PI10ms TL=%ld L=%ld LP=%ld%% TR=%ld R=%ld RP=%ld%%\r\n",
                      (long)tl, (long)left, (long)lp, (long)tr, (long)right, (long)rp);
             /* USART2 → ST-LINK → 电脑，115200。这里只显示，不接收遥控。 */
-            HAL_UART_Transmit(mx_usart2_uart_gethandle(), text, (uint32_t)strlen(text), 20U);
+            //HAL_UART_Transmit(mx_usart2_uart_gethandle(), text, (uint32_t)strlen(text), 20U);
             /* 同一条数据通过 UART4 → JDY-31 回传，网页每秒显示左右占空比。 */
             HAL_UART_Transmit(mx_uart4_uart_gethandle(), text, (uint32_t)strlen(text), 100U);
         }
